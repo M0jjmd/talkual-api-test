@@ -76,7 +76,7 @@ export default ({ env }) => {
           __dirname,
           '..',
           '..',
-          env('DATABASE_FILENAME', '.tmp/data.db')
+          env('NODE_ENV') === 'test' ? '.tmp/test-data.db' : '.tmp/data.db'
         ),
       },
       useNullAsDefault: true,

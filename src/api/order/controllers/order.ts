@@ -15,8 +15,14 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 
       /***** Rest of the code here *****/
 
+      const { shipping_postcode } = order_meta;
+
       if (!order) {
         return ctx.badRequest('Pedido no encontrado');
+      }
+
+      if (!isValidPostalCode(shipping_postcode)) {
+        return ctx.badRequest('Código postal inválido');
       }
 
       return { order, order_meta, authenticatedUser };

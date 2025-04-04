@@ -48,6 +48,17 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         }
       });
 
+      for (const item of order.order_items) {
+        await strapi.service('api::order-item.order-item').create({
+          data: {
+            quantity: item.quantity,
+            sku: `${item.sku}-${newOrder.id}`,
+            price: item.price,
+            order: newOrder.id,
+          },
+        });
+      };
+
       return { order, order_meta, authenticatedUser };
     } catch (error) {
       console.error('Error exporting orders', error);

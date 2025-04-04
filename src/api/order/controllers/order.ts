@@ -11,6 +11,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       const sanitizedQueryParams = await this.sanitizeQuery(ctx);
       const authenticatedUser = ctx.state.user;
       const { order_meta } = ctx.request.body;
+      const orderID = ctx.params.id;
       const order = await strapi.service('api::order.order').findOne(sanitizedQueryParams, { populate: ['order_items', 'order_meta'] });
 
       /***** Rest of the code here *****/
@@ -24,6 +25,12 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       if (!isValidPostalCode(shipping_postcode)) {
         return ctx.badRequest('Código postal inválido');
       }
+
+      await strapi.service('api::order.order').update(orderID, {
+        data: {
+          status: 'cancelled',
+        }
+      });
 
       return { order, order_meta, authenticatedUser };
     } catch (error) {

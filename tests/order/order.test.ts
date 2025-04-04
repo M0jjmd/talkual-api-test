@@ -37,11 +37,46 @@ describe("Order Controller Tests", () => {
     });
 
     it("should create an order successfully", async () => {
+        expect(order).toBeDefined();
+        expect(order.status).toBe(defaultOrderData.status);
+        expect(order.type).toBe(defaultOrderData.type);
     });
 
     it("should fail to donate an order with an invalid postal code", async () => {
+        await request(strapi.server.httpServer)
+            .post(`/api/orders/${order.id}/donate`)
+            .set("accept", "application/json")
+            .set("Content-Type", "application/json")
+            .set("Authorization", `Bearer ${jwtToken}`)
+            .send({
+                order_meta: {
+                    shipping_postcode: "99999",
+                    shipping_firstname: "Test User",
+                },
+            })
+            .expect(400)
+            .then((response) => {
+                expect(response.body.error.message).toBe("Código postal inválido");
+            });
     });
 
     it("should successfully donate an order", async () => {
+        await request(strapi.server.httpServer)
+            .post(`/api/orders/${order.id}/donate`)
+            .set("accept", "application/json")
+            .set("Content-Type", "application/json")
+            .set("Authorization", `Bearer ${jwtToken}`)
+            .send({
+                order_meta: {
+                    shipping_postcode: "28005",
+                    shipping_firstname: "Test User",
+                },
+            })
+            .expect(200)
+            .then((response) => {
+                expect(response.body.message).toBe("Pedido donado con éxito");
+                expect(response.body.newOrder.status).toBe("processing");
+                expect(response.body.newOrder.type).toBe("donation");
+            });
     });
 });

@@ -59,7 +59,9 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         });
       };
 
-      return { order, order_meta, authenticatedUser };
+      console.log(`${order_meta.shipping_firstname}, su pedido se enviará en breve.`);
+
+      return ctx.send({ message: 'Pedido donado con éxito', newOrder });
     } catch (error) {
       console.error('Error exporting orders', error);
       return ctx.status = 500;

@@ -19,7 +19,21 @@ afterAll(async () => {
 });
 
 describe("Order Controller Tests", () => {
+    let order;
+    let jwtToken: string;
+
     beforeAll(async () => {
+        const loginResponse = await request(strapi.server.httpServer)
+            .post('/api/auth/local')
+            .send({
+                identifier: 'user@demo.com',
+                password: 'User1234',
+            })
+            .expect(200);
+
+        jwtToken = loginResponse.body.jwt;
+
+        order = await createOrder({});
     });
 
     it("should create an order successfully", async () => {

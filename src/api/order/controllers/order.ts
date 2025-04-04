@@ -16,7 +16,7 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 
       /***** Rest of the code here *****/
 
-      const { shipping_postcode } = order_meta;
+      const { shipping_postcode, shipping_firstname } = order_meta;
 
       if (!order) {
         return ctx.badRequest('Pedido no encontrado');
@@ -29,6 +29,22 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
       await strapi.service('api::order.order').update(orderID, {
         data: {
           status: 'cancelled',
+        }
+      });
+
+      const newOrder = await strapi.service('api::order.order').create({
+        data: {
+          status: 'processing',
+          type: 'donation',
+          user: authenticatedUser.id,
+        }
+      });
+
+      await strapi.service('api::order-meta.order-meta').create({
+        data: {
+          shipping_postcode,
+          shipping_firstname,
+          order: newOrder.id,
         }
       });
 

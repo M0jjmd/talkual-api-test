@@ -25,12 +25,10 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
         });
 
         if (!order) {
-          console.log('error en order');
           return ctx.badRequest('Pedido no encontrado');
         }
 
         if (!isValidPostalCode(shipping_postcode)) {
-          console.log('error en PostalCode');
           return ctx.badRequest('Código postal inválido');
         }
 

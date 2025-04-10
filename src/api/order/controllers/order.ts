@@ -18,50 +18,63 @@ export default factories.createCoreController('api::order.order', ({ strapi }) =
 
       const { shipping_postcode, shipping_firstname } = order_meta;
 
-      if (!order) {
-        return ctx.badRequest('Pedido no encontrado');
-      }
+      return await strapi.db.transaction(async (trx) => {
+        const order = await strapi.service('api::order.order').findOne(orderID, {
+          populate: ['order_items', 'order_meta', 'user'],
+          transacting: trx,
+        });
 
-      if (!isValidPostalCode(shipping_postcode)) {
-        return ctx.badRequest('Código postal inválido');
-      }
-
-      await strapi.service('api::order.order').update(orderID, {
-        data: {
-          status: 'cancelled',
+        if (!order) {
+          console.log('error en order');
+          return ctx.badRequest('Pedido no encontrado');
         }
-      });
 
-      const newOrder = await strapi.service('api::order.order').create({
-        data: {
-          status: 'processing',
-          type: 'donation',
-          user: authenticatedUser.id,
+        if (!isValidPostalCode(shipping_postcode)) {
+          console.log('error en PostalCode');
+          return ctx.badRequest('Código postal inválido');
         }
-      });
 
-      await strapi.service('api::order-meta.order-meta').create({
-        data: {
-          shipping_postcode,
-          shipping_firstname,
-          order: newOrder.id,
-        }
-      });
-
-      for (const item of order.order_items) {
-        await strapi.service('api::order-item.order-item').create({
+        const newOrder = await strapi.service('api::order.order').create({
           data: {
-            quantity: item.quantity,
-            sku: `${item.sku}-${newOrder.id}`,
-            price: item.price,
+            status: 'processing',
+            type: 'donation',
+            user: authenticatedUser.id,
+          },
+          transacting: trx,
+        });
+
+        await strapi.service('api::order.order').update(orderID, {
+          data: {
+            status: 'cancelled',
+          },
+          transacting: trx,
+        });
+
+        await strapi.service('api::order-meta.order-meta').create({
+          data: {
+            shipping_postcode,
+            shipping_firstname,
             order: newOrder.id,
           },
+          transacting: trx,
         });
-      };
 
-      console.log(`${order_meta.shipping_firstname}, su pedido se enviará en breve.`);
+        for (const item of order.order_items) {
+          await strapi.service('api::order-item.order-item').create({
+            data: {
+              quantity: item.quantity,
+              sku: `${item.sku}-${newOrder.id}`,
+              price: item.price,
+              order: newOrder.id,
+            },
+            transacting: trx,
+          });
+        };
 
-      return ctx.send({ message: 'Pedido donado con éxito', newOrder });
+        console.log(`${order_meta.shipping_firstname}, su pedido se enviará en breve.`);
+
+        return ctx.send({ message: 'Pedido donado con éxito y transaccion correctaF', newOrder });
+      })
     } catch (error) {
       console.error('Error exporting orders', error);
       return ctx.status = 500;
